@@ -10,16 +10,19 @@ cards_bg = image.load('releaseProject\\releaseProject\\img\\BackgroundBlack.png'
 
 init()
 class GameSprite(sprite.Sprite):
-    def __init__(self, sprite_img, width, height, x, y,):
+    def __init__(self, sprite_img, width, height, x, y,name=''):
         super().__init__()
         self.image = transform.scale(sprite_img, (width, height))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.mask = mask.from_surface(self.image)  
+        self.mask = mask.from_surface(self.image)
+        
 
-    def draw(self): #відрисовуємо спрайт у вікні
+    def draw(self): 
         window.blit(self.image, self.rect)
+    def collidepoint(self, x, y):
+        return self.rect.collidepoint(x, y)
 class Player(GameSprite):
     def __init__(self, sprite_img, width, height, x, y):
         super().__init__(sprite_img, width, height, x, y)
@@ -30,6 +33,9 @@ class Player(GameSprite):
         card = choice(cards)
         self.cards.append(card)
         return card
+    
+take_card_img = image.load('releaseProject\\releaseProject\\img\\new_take_card.png')
+take_card = GameSprite(take_card_img,100,50,650,275)
 
 
 club_2_img = image.load('releaseProject\\releaseProject\\img\\club_2.png')
@@ -200,8 +206,8 @@ def calculate_score(cards):
     global score 
     score = 0
     for card in cards:
-        # Додаємо значення карти до суми, ураховуючи тузи
-        if card.image == club_A_img or card.image == diamond_A_img or card.image == heart_A_img or card.image == spade_A_img:
+
+        if   card.image == diamond_A_img or card.image == heart_A_img or card.image == spade_A_img:
             score += 11
         if card.image == club_2_img or card.image == diamond_2_img or card.image == heart_2_img or card.image == spade_2_img:
             score += 2
@@ -222,9 +228,8 @@ def calculate_score(cards):
         if card.image == club_10_img or card.image == diamond_10_img or card.image == heart_10_img or card.image == spade_10_img:
             score += 10
    
-    while score > 21 and num_aces:
+    while score > 21 :
         score -= 10
-        num_aces -= 1
 
         return score
 FPS = 60
@@ -236,14 +241,11 @@ pressed_keys = key.get_pressed()
 
 player = Player(cards_bg, 50, 50, 50, H*0.25)
 dealer = Player(cards_bg, 50, 50, 50, H*0.25)
-# ... (попередні імпорти та класи)
 
-# Ініціалізуємо нову гру
-# ... (попередні імпорти та класи)
 
 
 player_cards = []
-dealer.cards = []
+dealer_cards = []
 player_score = 0
 dealer_score = 0
 
@@ -252,15 +254,20 @@ while True:
         if e.type == QUIT:
             quit()
         
-        if e.type == KEYDOWN:
-            if e.key == K_f:
-                player_card = player.to_get_a_card(cards)
-                player_cards.append(player_card)
-                player_score = calculate_score(player_cards)
+        if e.type == MOUSEBUTTONDOWN:
+            if e.button == 1:
+                if len(player_cards) < 2 and take_card.rect.collidepoint(e.pos): 
+                    player_card = player.to_get_a_card(cards)
+                    cards.remove(player_card)
+                    player_cards.append(player_card)
+                    player_score = calculate_score(player_cards)
         
     window.blit(background, (0, 0))
+    
+    take_card.draw()
 
-    # Рисуємо карти гравця
+
+    
     card_x = W // 2 - 60
     card_y = H - 250
     for card in player.cards:
@@ -269,20 +276,21 @@ while True:
         card.draw()
         card_x += 60
 
-    # Підраховуємо та виводимо рахунок гравця
+
     player_text = f"Player Score: {player_score}"
     player_text_surface = f1.render(player_text, True, (255, 255, 255))
     window.blit(player_text_surface, (20, 20))
 
-    # Автоматично витягуємо карти для дилера кожні 3 секунди
-    if len(dealer.cards) < 2:
+    
+    if len(dealer_cards) < 2:
 
     
         dealer_card = dealer.to_get_a_card(cards)
-        dealer_score = calculate_score(dealer.cards)
+        dealer_cards.append(dealer_card)
+        dealer_score = calculate_score(dealer_cards)
     
 
-    # Рисуємо карти дилера
+
     card_x = W // 2 - 60
     card_y = 50
     for card in dealer.cards:
@@ -291,7 +299,7 @@ while True:
         card.draw()
         card_x += 60
 
-    # Підраховуємо та виводимо рахунок дилера
+
     dealer_text = f"Dealer Score: {dealer_score}"
     dealer_text_surface = f1.render(dealer_text, True, (255, 255, 255))
     window.blit(dealer_text_surface, (20, H - 50))
